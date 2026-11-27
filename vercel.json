@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node scripts/base-du-build.mjs && npm run db:migrate && next build",
+  "git": {
+    "deploymentEnabled": {
+      "**": false,
+      "dev": true,
+      "main": true,
+      "production": true
+    }
+  }
+}
