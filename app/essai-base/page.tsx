@@ -1,4 +1,4 @@
-import { desc } from "drizzle-orm";
+import { desc, TransactionRollbackError } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -19,7 +19,16 @@ export default function EssaiBase() {
 async function ajouter(formulaire: FormData) {
   "use server";
   const texte = String(formulaire.get("texte") ?? "").trim();
-  if (texte) await db().insert(notes).values({ texte });
+  if (texte === "") return;
+  try {
+    await db().transaction(async (tx) => {
+      await tx.insert(notes).values({ texte, source: "transaction" });
+      // « annuler … » : la note est écrite, puis toute la transaction est annulée.
+      if (texte.startsWith("annuler")) tx.rollback();
+    });
+  } catch (erreur) {
+    if (!(erreur instanceof TransactionRollbackError)) throw erreur;
+  }
   revalidatePath("/essai-base");
 }
 
@@ -30,7 +39,8 @@ async function Notes() {
     <>
       <p className="mt-2 text-zinc-700 dark:text-zinc-300">
         Environnement {process.env.VERCEL_ENV ?? "local"}, branche{" "}
-        {process.env.VERCEL_GIT_COMMIT_REF ?? "inconnue"}, base {pointDeTerminaison()}.
+        {process.env.VERCEL_GIT_COMMIT_REF ?? "inconnue"}, région {process.env.VERCEL_REGION ?? "locale"}, base{" "}
+        {pointDeTerminaison()}.
       </p>
       <form action={ajouter} className="mt-6 flex gap-2">
         <label htmlFor="texte" className="sr-only">
@@ -43,7 +53,10 @@ async function Notes() {
       </form>
       <ul className="mt-6 list-disc pl-6">
         {lignes.map((l) => (
-          <li key={l.id}>{l.texte}</li>
+          <li key={l.id}>
+            {l.texte}
+            {l.source ? ` (${l.source})` : ""}
+          </li>
         ))}
       </ul>
     </>

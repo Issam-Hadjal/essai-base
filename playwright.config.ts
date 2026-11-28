@@ -17,9 +17,11 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: `npm run start -- --port ${port}`,
+    // A fresh PGlite database with its migrations, then the production build on it.
+    command: "node scripts/serveur-e2e.mjs",
     url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    timeout: 120_000,
+    env: { PORT_APP: String(port) },
   },
 });

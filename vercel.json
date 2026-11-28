@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node scripts/base-du-build.mjs && node scripts/garde-migration.mjs && npm run db:migrate && next build",
+  "buildCommand": "node scripts/garde-migration.mjs && next build && npm run db:migrate",
+  "regions": ["fra1"],
   "git": {
     "deploymentEnabled": {
       "**": false,
